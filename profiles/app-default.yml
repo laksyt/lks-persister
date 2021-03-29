@@ -1,5 +1,21 @@
 log:
   level: INFO
 
-test:
-  message: Running in local
+kafka:
+  schedule:
+    delay: 10
+    timeout: 3
+    max_records: 10
+  consumer:
+    bootstrap_servers: placeholder-kafka-server.aivencloud.com:22222
+    auto_offset_reset: earliest
+    client_id: lks-persister-1
+    group_id: lks-persister-group
+    security_protocol: SSL
+    ssl_cafile: ca.pem
+    ssl_certfile: service.cert
+    ssl_keyfile: service.key
+  topic: placeholder-topic
+
+postgres:
+  uri: postgres://user:pwd@placeholder-postgres-server.aivencloud.com:22222/homework?sslmode=require

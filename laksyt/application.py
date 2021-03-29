@@ -3,9 +3,13 @@ import logging
 from asyncio import Future
 from typing import Optional
 
-from persister.config.config import Config
-from persister.logging import configure_logging
-from persister.tasks.uptime import UptimeReporter
+from laksyt.config.config import Config
+from laksyt.entities.kafka.consumer import get_kafka_consumer
+from laksyt.entities.kafka.schedule import get_schedule
+from laksyt.entities.postgres.dbconn import get_db_conn
+from laksyt.logging import configure_logging
+from laksyt.tasks.persister import ReportPersister
+from laksyt.tasks.uptime import UptimeReporter
 
 
 class Application:
@@ -20,12 +24,16 @@ class Application:
         self.logger = logging.getLogger(__name__)
         self.config = config
         self.loop = asyncio.get_event_loop()
-        self.task: Optional[Future] = None
 
         self.uptime_reporter = UptimeReporter()
+        self.report_persister = ReportPersister(
+            get_schedule(config),
+            get_kafka_consumer(config),
+            get_db_conn(config)
+        )
 
     def launch(self):
-        self.task = self.loop.create_task(self._workload())
+        self.loop.create_task(self._workload())
         try:
             self.loop.run_forever()
         except asyncio.CancelledError:
@@ -35,5 +43,6 @@ class Application:
 
     async def _workload(self):
         await asyncio.gather(
-            self.uptime_reporter.report_continuously()
+            self.uptime_reporter.report_continuously(),
+            self.report_persister.report_continuously()
         )

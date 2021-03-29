@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-from persister.config.profiles import Profiles
+from laksyt.config.profiles import Profiles
 
 PROFILE_ENV_VAR_NAME = 'LAKSYT_PROFILE'
 
@@ -37,7 +37,7 @@ class Args:
     @staticmethod
     def _build_parser() -> argparse.ArgumentParser:
         return argparse.ArgumentParser(
-            prog="lks-persister",
+            prog="lks-laksyt",
             description="Python micro-service that subscribes to a Kafka topic"
                         " and persists messages to a PostgreSQL instance.",
             epilog="Written by Erik Sargazakov.",

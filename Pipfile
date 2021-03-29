@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 pyyaml = "*"
+psycopg2-binary = "*"
+kafka-python = "*"
+dataclasses-avroschema = "*"
 
 [dev-packages]
 pytest = "*"

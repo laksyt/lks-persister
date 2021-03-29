@@ -2,7 +2,7 @@ from os.path import join
 
 import pytest
 
-from persister.config.profiles import DEFAULT_PROFILE_NAME, Profiles
+from laksyt.config.profiles import DEFAULT_PROFILE_NAME, Profiles
 from tests.startup.utilities import create_config_file
 
 
