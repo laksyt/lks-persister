@@ -3,8 +3,8 @@ from os.path import join
 
 import yaml
 
-from persister.startup.args import Args
-from persister.startup.profiles import Profiles
+from persister.config.args import Args
+from persister.config.profiles import Profiles
 
 PROJECT_ROOT_DIR = join(os.path.dirname(__file__), os.pardir, os.pardir)
 

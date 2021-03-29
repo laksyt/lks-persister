@@ -1,6 +1,6 @@
 import os
 
-from persister.startup.profiles import DEFAULT_PROFILE_NAME, PROFILE_CONFIG_FILE_NAME_PREFIX, \
+from persister.config.profiles import DEFAULT_PROFILE_NAME, PROFILE_CONFIG_FILE_NAME_PREFIX, \
     PROFILE_CONFIG_FILE_NAME_SUFFIX
 
 

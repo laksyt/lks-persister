@@ -1,5 +1,5 @@
-from persister.startup.config import Config
-from persister.startup.profiles import DEFAULT_PROFILE_NAME, Profiles
+from persister.config.config import Config
+from persister.config.profiles import DEFAULT_PROFILE_NAME, Profiles
 from tests.startup.utilities import create_profile_config_file
 
 

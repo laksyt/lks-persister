@@ -1,7 +1,7 @@
 import pytest
 
-from persister.startup.args import Args, PROFILE_ENV_VAR_NAME
-from persister.startup.profiles import Profiles
+from persister.config.args import Args, PROFILE_ENV_VAR_NAME
+from persister.config.profiles import Profiles
 from tests.startup.utilities import create_test_profiles
 
 

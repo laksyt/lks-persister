@@ -6,7 +6,7 @@ Python micro-service that subscribes to a Kafka topic and persists messages to a
 
 The application can be built and run with Docker as such:
 
-[source, bash]
+[source,bash]
 ----
 docker build -t laksyt/lks-persister:latest . && docker run -it --rm laksyt/lks-persister:latest
 ----

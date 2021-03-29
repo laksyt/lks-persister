@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-from persister.startup.profiles import Profiles
+from persister.config.profiles import Profiles
 
 PROFILE_ENV_VAR_NAME = 'LAKSYT_PROFILE'
 
