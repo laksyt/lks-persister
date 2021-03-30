@@ -14,26 +14,38 @@ from laksyt.entities.target import SQL_INSERT_TARGETS
 
 logger = logging.getLogger(__name__)
 PROJECT_ROOT_DIR = join(os.path.dirname(__file__), os.pardir, os.pardir)
-POSTGRES_SCHEMA_SQL_PATH = join(PROJECT_ROOT_DIR, 'sql', 'schema.sql')
+POSTGRES_INIT_SCHEMA_SQL_PATH = join(PROJECT_ROOT_DIR, 'sql', 'init_schema.sql')
+POSTGRES_WIPE_SCHEMA_SQL_PATH = join(PROJECT_ROOT_DIR, 'sql', 'wipe_schema.sql')
 
 
 class ReportPersister:
+    """Main asynchronous workload
+
+    Periodically polls Kafka topic for health check reports, then persists
+    whatever messages were polled into configured PostgreSQL database
+    """
 
     def __init__(
             self,
             schedule: Schedule,
             kafka_consumer: KafkaConsumer,
             db_conn: connection,
-            schema_sql_path: str = POSTGRES_SCHEMA_SQL_PATH,
-            init_schema: bool = True
+            init_schema_sql_path: str = POSTGRES_INIT_SCHEMA_SQL_PATH,
+            wipe_schema_sql_path: str = POSTGRES_WIPE_SCHEMA_SQL_PATH
     ):
+        """Accepts configuration, then, according to configuration preferences,
+        executes startup SQL files on PostgreSQL instance
+        """
         self._schedule = schedule
         self._kafka_consumer = kafka_consumer
         self._db_conn = db_conn
-        if init_schema:
-            self._init_schema(schema_sql_path)
+        if schedule.wipe_schema:
+            self._exec_file(wipe_schema_sql_path)
+        if schedule.wipe_schema or schedule.init_schema:
+            self._exec_file(init_schema_sql_path)
 
     async def poll_continuously(self):
+        """Repeatedly (with delay) performs rounds of Kafka polls"""
         try:
             while True:
                 self.poll_once()
@@ -42,6 +54,7 @@ class ReportPersister:
             self._db_conn.close()
 
     def poll_once(self):
+        """Performs single Kafka poll and persists received health reports"""
         raw_messages = self._do_poll()
         reports = []
         for partition, messages in raw_messages.items():
@@ -57,12 +70,14 @@ class ReportPersister:
             logger.info(f"Received empty batch")
 
     def _do_poll(self) -> dict:
+        """Polls next limited batch of reports from Kafka, with timeout"""
         return self._kafka_consumer.poll(
             timeout_ms=self._schedule.timeout * 1000,
             max_records=self._schedule.max_records
         )
 
     def _do_persist(self, reports: list[HealthReport]) -> None:
+        """Persists given batch of health reports to PostgreSQL instance"""
         if not reports:
             return
         try:
@@ -76,16 +91,17 @@ class ReportPersister:
                 ", they will be dropped"
             )
 
-    def _init_schema(self, schema_sql_path: str) -> None:
+    def _exec_file(self, sql_path: str) -> None:
+        """Executes SQL file at given path against PostgreSQL instance"""
         try:
             with self._db_conn:
                 with self._db_conn.cursor() as cursor:
-                    cursor.execute(open(schema_sql_path, 'r').read())
+                    cursor.execute(open(sql_path, 'r').read())
         except Error:
             self._db_conn.close()
             raise RuntimeError(
-                "Failed to initialize schema on PostgreSQL instance"
-                f" from file {schema_sql_path}"
+                f"Failed to execute SQL file at {sql_path}"
+                " on PostgreSQL instance"
             )
 
     @staticmethod
@@ -93,6 +109,7 @@ class ReportPersister:
             reports: list[HealthReport],
             cursor: extensions.cursor
     ):
+        """Inserts given health check targets into relevant database table"""
         return execute_values(
             cur=cursor,
             sql=SQL_INSERT_TARGETS,
@@ -108,6 +125,7 @@ class ReportPersister:
             reports: list[HealthReport],
             cursor: extensions.cursor
     ):
+        """Inserts given health check reports into relevant database table"""
         return execute_values(
             cur=cursor,
             sql=SQL_INSERT_REPORTS,

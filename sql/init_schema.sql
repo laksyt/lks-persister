@@ -1,9 +1,5 @@
--- On startup, application runs this SQL against the configured PostgreSQL
--- instance. Pre-existing tables are dropped before each run, to start from a
--- clean slate.
-
-DROP TABLE IF EXISTS target, report CASCADE;
-DROP VIEW IF EXISTS full_report CASCADE;
+-- Whether these commands are executed on application startup is controlled
+-- from the app-<profile>.yml files
 
 CREATE TABLE IF NOT EXISTS target
 (
@@ -14,7 +10,7 @@ CREATE TABLE IF NOT EXISTS target
     CONSTRAINT uq_url_needle UNIQUE (url, needle)
 );
 
-CREATE UNIQUE INDEX url_nullneedle_idx
+CREATE UNIQUE INDEX IF NOT EXISTS url_nullneedle_idx
     ON target (url) WHERE needle IS NULL;
 
 CREATE TABLE IF NOT EXISTS report

@@ -1,3 +1,12 @@
+"""Abstraction for health check target, to be reconstructed from Avro messages
+polled from Kafka topic. SQL query template is defined here to be used for
+persisting the instances in a PostgreSQL database.
+
+url (str): URL to send a GET request to.
+needle (str): Unparsed regex pattern to search for in the HTML content returned
+    from the website.
+"""
+
 from dataclasses import dataclass
 from typing import Optional
 

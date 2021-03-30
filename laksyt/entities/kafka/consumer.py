@@ -1,44 +1,31 @@
+"""Extracts and validates Kafka consumer parameters from the application config
+file for the active profile, then constructs and returns the consumer object
+"""
+
 from kafka import KafkaConsumer
 
 from laksyt.config.config import Config
 
 
-def get_kafka_consumer(
-        config: Config,
-        handle_kafka_exc=False
-) -> KafkaConsumer:
+def get_kafka_consumer(config: Config) -> KafkaConsumer:
+    kafka_consumer_config = config.extract_config_value(
+        ('kafka', 'consumer'),
+        lambda x: x is not None and isinstance(x, dict),
+        lambda x: x,
+        "dict with fields for KafkaConsumer constructor"
+    )
+    kafka_topic = config.extract_config_value(
+        ('kafka', 'topic'),
+        lambda x: x is not None and isinstance(x, str),
+        lambda x: x,
+        "str"
+    )
     try:
-        kafka_dict: dict = config['kafka']['consumer']
-    except KeyError:
-        raise RuntimeError(
-            "Missing key 'kafka.consumer'"
-            f" in config file {config.profile.get_file_name()}"
-        )
-    if not kafka_dict:
-        raise RuntimeError(
-            "Empty key 'kafka.consumer'"
-            f" in config file {config.profile.get_file_name()}"
-        )
-
-    try:
-        topic = config['kafka']['topic']
-    except KeyError:
-        raise RuntimeError(
-            "Missing key 'kafka.topic'"
-            f" in config file {config.profile.get_file_name()}"
-        )
-    if not isinstance(topic, str):
-        raise RuntimeError(
-            "Key 'kafka.topic' should be string"
-            f" in config file {config.profile.get_file_name()}"
-        )
-
-    try:
-        return KafkaConsumer(topic, **kafka_dict)
+        return KafkaConsumer(kafka_topic, **kafka_consumer_config)
     except Exception:
-        if handle_kafka_exc:
-            raise RuntimeError(
-                "Failed to construct KafkaProducer"
-                " from values in key 'kafka.consumer'"
-                f" in config file {config.profile.get_file_name()}"
-            )
+        raise RuntimeError(
+            "Failed to construct KafkaConsumer from value(s)"
+            f" at key 'kafka.consumer'"
+            f" in config file {config.profile.get_file_name()}"
+            f" (must be dict with fields for KafkaConsumer constructor)"
+        )

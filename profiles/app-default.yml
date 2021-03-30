@@ -3,10 +3,10 @@ log:
 
 kafka:
   schedule:
-    delay: 10
-    timeout: 3
-    max_records: 10
-  consumer:
+    delay: 10  # seconds after last Kafka poll ends before next one starts
+    timeout: 3  # Kafka poll timeout
+    max_records: 10  # limit on number of messages polled
+  consumer: # Kafka consumer client configuration
     bootstrap_servers: PLACEHOLDER.aivencloud.com:PLACEHOLDER
     auto_offset_reset: earliest
     client_id: lks-persister-1
@@ -15,7 +15,10 @@ kafka:
     ssl_cafile: ca.pem
     ssl_certfile: service.cert
     ssl_keyfile: service.key
-  topic: PLACEHOLDER
+  topic: PLACEHOLDER  # Kafka topic to poll for messages
 
 postgres:
   uri: postgres://PLACEHOLDER
+  startup:
+    init_schema: true  # on startup, create tables & views (if they don't they already exist)
+    wipe_schema: false  # on startup, wipe pre-existing tables & views, and re-create them anew

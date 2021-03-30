@@ -15,7 +15,11 @@ kafka:
   schedule:
     delay: 10
     timeout: 3
-    max_records: 10
+    max_records: 12
+postgres:
+  startup:
+    init_schema: true
+    wipe_schema: false
             '''
         )
 
@@ -25,4 +29,6 @@ kafka:
         # Then
         assert schedule.delay == 10
         assert schedule.timeout == 3
-        assert schedule.max_records == 10
+        assert schedule.max_records == 12
+        assert schedule.init_schema is True
+        assert schedule.wipe_schema is False
