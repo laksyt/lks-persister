@@ -3,7 +3,10 @@ from kafka import KafkaConsumer
 from laksyt.config.config import Config
 
 
-def get_kafka_consumer(config: Config) -> KafkaConsumer:
+def get_kafka_consumer(
+        config: Config,
+        handle_kafka_exc=False
+) -> KafkaConsumer:
     try:
         kafka_dict: dict = config['kafka']['consumer']
     except KeyError:
@@ -33,8 +36,9 @@ def get_kafka_consumer(config: Config) -> KafkaConsumer:
     try:
         return KafkaConsumer(topic, **kafka_dict)
     except Exception:
-        raise RuntimeError(
-            "Failed to construct KafkaProducer"
-            " from values in key 'kafka.consumer'"
-            f" in config file {config.profile.get_file_name()}"
-        )
+        if handle_kafka_exc:
+            raise RuntimeError(
+                "Failed to construct KafkaProducer"
+                " from values in key 'kafka.consumer'"
+                f" in config file {config.profile.get_file_name()}"
+            )

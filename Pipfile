@@ -8,10 +8,10 @@ pyyaml = "*"
 psycopg2-binary = "*"
 kafka-python = "*"
 dataclasses-avroschema = "*"
-pytest-asyncio = "*"
 
 [dev-packages]
 pytest = "*"
+pytest-asyncio = "*"
 
 [requires]
 python_version = "3.9"

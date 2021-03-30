@@ -6,7 +6,6 @@ from dataclasses_avroschema import AvroModel
 
 from laksyt.entities.target import Target
 
-
 SQL_INSERT_REPORTS = """
 INSERT INTO report ( target_id, is_available, status, status_code, response_time, needle_found, checked_at )
 SELECT t.target_id::integer

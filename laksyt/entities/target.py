@@ -3,7 +3,6 @@ from typing import Optional
 
 from dataclasses_avroschema import AvroModel
 
-
 SQL_INSERT_TARGETS = "INSERT INTO target ( url, needle ) " \
                      "VALUES %s ON CONFLICT DO NOTHING;"
 
