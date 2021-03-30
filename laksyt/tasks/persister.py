@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+from os.path import join
 
 from kafka import KafkaConsumer
 from psycopg2 import extensions
@@ -11,6 +13,8 @@ from laksyt.entities.report import HealthReport, SQL_INSERT_REPORTS
 from laksyt.entities.target import SQL_INSERT_TARGETS
 
 logger = logging.getLogger(__name__)
+PROJECT_ROOT_DIR = join(os.path.dirname(__file__), os.pardir, os.pardir)
+POSTGRES_SCHEMA_SQL_PATH = join(PROJECT_ROOT_DIR, 'sql', 'schema.sql')
 
 
 class ReportPersister:
@@ -19,22 +23,26 @@ class ReportPersister:
             self,
             schedule: Schedule,
             kafka_consumer: KafkaConsumer,
-            db_conn: connection
+            db_conn: connection,
+            schema_sql_path: str = POSTGRES_SCHEMA_SQL_PATH,
+            init_schema: bool = True
     ):
         self._schedule = schedule
         self._kafka_consumer = kafka_consumer
         self._db_conn = db_conn
+        if init_schema:
+            self._init_schema(schema_sql_path)
 
-    async def report_continuously(self):
+    async def poll_continuously(self):
         try:
             while True:
-                self._check()
+                self.poll_once()
                 await asyncio.sleep(self._schedule.delay)
         finally:
             self._db_conn.close()
 
-    def _check(self):
-        raw_messages = self._poll()
+    def poll_once(self):
+        raw_messages = self._do_poll()
         reports = []
         for partition, messages in raw_messages.items():
             for message in messages:
@@ -48,7 +56,7 @@ class ReportPersister:
         else:
             logger.info(f"Received empty batch")
 
-    def _poll(self):
+    def _do_poll(self) -> dict:
         return self._kafka_consumer.poll(
             timeout_ms=self._schedule.timeout * 1000,
             max_records=self._schedule.max_records
@@ -66,6 +74,18 @@ class ReportPersister:
             logger.exception(
                 "Failed to persist latest batch of reports"
                 ", they will be dropped"
+            )
+
+    def _init_schema(self, schema_sql_path: str) -> None:
+        try:
+            with self._db_conn:
+                with self._db_conn.cursor() as cursor:
+                    cursor.execute(open(schema_sql_path, 'r').read())
+        except Error:
+            self._db_conn.close()
+            raise RuntimeError(
+                "Failed to initialize schema on PostgreSQL instance"
+                f" from file {schema_sql_path}"
             )
 
     @staticmethod

@@ -8,6 +8,7 @@ pyyaml = "*"
 psycopg2-binary = "*"
 kafka-python = "*"
 dataclasses-avroschema = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 pytest = "*"

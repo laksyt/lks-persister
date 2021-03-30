@@ -1,7 +1,5 @@
 import asyncio
 import logging
-from asyncio import Future
-from typing import Optional
 
 from laksyt.config.config import Config
 from laksyt.entities.kafka.consumer import get_kafka_consumer
@@ -44,5 +42,5 @@ class Application:
     async def _workload(self):
         await asyncio.gather(
             self.uptime_reporter.report_continuously(),
-            self.report_persister.report_continuously()
+            self.report_persister.poll_continuously()
         )
