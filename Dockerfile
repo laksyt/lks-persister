@@ -14,6 +14,7 @@ RUN /home/lks/.local/bin/pipenv install --deploy --ignore-pipfile
 
 COPY main.py                            main.py
 COPY laksyt/                            laksyt/
+COPY sql/                               sql/
 COPY profiles/                          profiles/
 COPY ca.pem service.cert service.key    ./
 
