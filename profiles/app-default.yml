@@ -4,7 +4,7 @@ log:
 kafka:
   schedule:
     delay: 10  # seconds after last Kafka poll ends before next one starts
-    timeout: 3  # Kafka poll timeout
+    timeout: 3  # Kafka poll timeout in seconds
     max_records: 10  # limit on number of messages polled
   consumer: # Kafka consumer client configuration
     bootstrap_servers: PLACEHOLDER.aivencloud.com:PLACEHOLDER
