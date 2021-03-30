@@ -58,14 +58,14 @@ To run the application with Docker, first build the image:
 
 [source]
 ----
-docker build -t laksyt/lks-checker:latest .
+docker build -t laksyt/lks-persister:latest .
 ----
 
 Then run the application:
 
 [source]
 ----
-docker run -it --rm [-e LAKSYT_PROFILE='<PROFILE_NAME>'] laksyt/lks-checker:latest
+docker run -it --rm [-e LAKSYT_PROFILE='<PROFILE_NAME>'] laksyt/lks-persister:latest
 ----
 
 == While running
