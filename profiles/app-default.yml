@@ -7,7 +7,7 @@ kafka:
     timeout: 3
     max_records: 10
   consumer:
-    bootstrap_servers: placeholder-kafka-server.aivencloud.com:22222
+    bootstrap_servers: PLACEHOLDER.aivencloud.com:PLACEHOLDER
     auto_offset_reset: earliest
     client_id: lks-persister-1
     group_id: lks-persister-group
@@ -15,7 +15,7 @@ kafka:
     ssl_cafile: ca.pem
     ssl_certfile: service.cert
     ssl_keyfile: service.key
-  topic: placeholder-topic
+  topic: PLACEHOLDER
 
 postgres:
-  uri: postgres://user:pwd@placeholder-postgres-server.aivencloud.com:22222/homework?sslmode=require
+  uri: postgres://PLACEHOLDER
