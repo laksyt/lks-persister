@@ -20,5 +20,5 @@ kafka:
 postgres:
   uri: postgres://PLACEHOLDER
   startup:
-    init_schema: true  # on startup, create tables & views (if they don't they already exist)
+    init_schema: true  # on startup, create tables & views (if they don't already exist)
     wipe_schema: false  # on startup, wipe pre-existing tables & views, and re-create them anew
