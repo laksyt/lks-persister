@@ -48,7 +48,7 @@ class ReportPersister:
         received report batches
         """
         try:
-            async for batch in self._kafka_poller.poll_continuously():
+            async for batch in self._kafka_poller:
                 self._persist_once(batch)
         finally:
             self._db_conn.close()

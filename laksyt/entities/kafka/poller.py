@@ -35,6 +35,10 @@ class KafkaPoller:
         self._schedule = schedule
         self._kafka_consumer = kafka_consumer
 
+    def __aiter__(self):
+        """Makes poller instances asynchronously iterable"""
+        return self.poll_continuously()
+
     async def poll_continuously(self):
         """Exposes continuous polling function as an asynchronous generator"""
         while True:
