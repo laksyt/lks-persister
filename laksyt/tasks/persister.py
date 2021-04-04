@@ -1,14 +1,14 @@
-import asyncio
 import logging
 import os
 from os.path import join
+from typing import Optional
 
-from kafka import KafkaConsumer
 from psycopg2 import extensions
 from psycopg2._psycopg import Error, connection
 from psycopg2.extras import execute_values
 
-from laksyt.entities.kafka.schedule import Schedule
+from laksyt.entities.kafka.poller import KafkaPoller
+from laksyt.entities.kafka.startup import Startup
 from laksyt.entities.report import HealthReport, SQL_INSERT_REPORTS
 from laksyt.entities.target import SQL_INSERT_TARGETS
 
@@ -27,8 +27,8 @@ class ReportPersister:
 
     def __init__(
             self,
-            schedule: Schedule,
-            kafka_consumer: KafkaConsumer,
+            startup: Startup,
+            kafka_poller: KafkaPoller,
             db_conn: connection,
             init_schema_sql_path: str = POSTGRES_INIT_SCHEMA_SQL_PATH,
             wipe_schema_sql_path: str = POSTGRES_WIPE_SCHEMA_SQL_PATH
@@ -36,72 +36,41 @@ class ReportPersister:
         """Accepts configuration, then, according to configuration preferences,
         executes startup SQL files on PostgreSQL instance
         """
-        self._schedule = schedule
-        self._kafka_consumer = kafka_consumer
+        self._kafka_poller = kafka_poller
         self._db_conn = db_conn
-        if schedule.wipe_schema:
+        if startup.wipe_schema:
             self._exec_file(wipe_schema_sql_path)
-        if schedule.wipe_schema or schedule.init_schema:
+        if startup.wipe_schema or startup.init_schema:
             self._exec_file(init_schema_sql_path)
 
-    async def poll_continuously(self):
-        """Repeatedly (with delay) performs rounds of Kafka polls"""
+    async def persist_continuously(self):
+        """Consumes KafkaPoller as an asynchronous generator and persists
+        received report batches
+        """
         try:
-            while True:
-                self.poll_once()
-                await asyncio.sleep(self._schedule.delay)
+            async for batch in self._kafka_poller.poll_continuously():
+                self._persist_once(batch)
         finally:
             self._db_conn.close()
 
-    def poll_once(self):
-        """Performs single Kafka poll and persists received health reports"""
-        raw_messages = self._do_poll()
-        reports = []
-        for partition, messages in raw_messages.items():
-            for message in messages:
-                report = HealthReport.deserialize(message.value)
-                reports.append(report)
-                logger.info(f"Received {report}")
-        self._kafka_consumer.commit()
-        if reports:
-            logger.info(f"Received batch of {len(reports)} reports; persisting")
-            self._do_persist(reports)
+    def _persist_once(self, batch: Optional[list[HealthReport]]) -> None:
+        """Persists single batch of health reports"""
+        if not batch:
+            return  # all polling errors logged where encountered
         else:
-            logger.info(f"Received empty batch")
+            logger.info(f"Persisting batch of {len(batch)} reports")
+            self._do_persist(batch)
 
-    def _do_poll(self) -> dict:
-        """Polls next limited batch of reports from Kafka, with timeout"""
-        return self._kafka_consumer.poll(
-            timeout_ms=self._schedule.timeout * 1000,
-            max_records=self._schedule.max_records
-        )
-
-    def _do_persist(self, reports: list[HealthReport]) -> None:
+    def _do_persist(self, batch: list[HealthReport]) -> None:
         """Persists given batch of health reports to PostgreSQL instance"""
-        if not reports:
-            return
         try:
             with self._db_conn:
                 with self._db_conn.cursor() as cursor:
-                    self._insert_targets(reports, cursor)
-                    self._insert_reports(reports, cursor)
+                    self._insert_targets(batch, cursor)
+                    self._insert_reports(batch, cursor)
         except Error:
             logger.exception(
-                "Failed to persist latest batch of reports"
-                ", they will be dropped"
-            )
-
-    def _exec_file(self, sql_path: str) -> None:
-        """Executes SQL file at given path against PostgreSQL instance"""
-        try:
-            with self._db_conn:
-                with self._db_conn.cursor() as cursor:
-                    cursor.execute(open(sql_path, 'r').read())
-        except Error:
-            self._db_conn.close()
-            raise RuntimeError(
-                f"Failed to execute SQL file at {sql_path}"
-                " on PostgreSQL instance"
+                "Failed to persist latest batch of reports; dropping"
             )
 
     @staticmethod
@@ -139,3 +108,17 @@ class ReportPersister:
                 for report in reports
             ]
         )
+
+    def _exec_file(self, sql_path: str) -> None:
+        """Executes SQL file at given path against PostgreSQL instance"""
+        logger.info(f"Executing SQL script at {sql_path}")
+        try:
+            with self._db_conn:
+                with self._db_conn.cursor() as cursor:
+                    cursor.execute(open(sql_path, 'r').read())
+        except Error:
+            self._db_conn.close()
+            raise RuntimeError(
+                f"Failed to execute SQL file at {sql_path}"
+                " on PostgreSQL instance"
+            )

@@ -2,8 +2,8 @@ import asyncio
 import logging
 
 from laksyt.config.config import Config
-from laksyt.entities.kafka.consumer import get_kafka_consumer
-from laksyt.entities.kafka.schedule import get_schedule
+from laksyt.entities.kafka.poller import get_kafka_poller
+from laksyt.entities.kafka.startup import get_startup
 from laksyt.entities.postgres.dbconn import get_db_conn
 from laksyt.logging import configure_logging
 from laksyt.tasks.persister import ReportPersister
@@ -26,8 +26,8 @@ class Application:
 
         self.uptime_reporter = UptimeReporter()
         self.report_persister = ReportPersister(
-            get_schedule(config),
-            get_kafka_consumer(config),
+            get_startup(config),
+            get_kafka_poller(config),
             get_db_conn(config)
         )
 
@@ -49,7 +49,7 @@ class Application:
         """Groups long-running asynchronous tasks into a single workload"""
         await asyncio.gather(
             self.uptime_reporter.report_continuously(),
-            self.report_persister.poll_continuously()
+            self.report_persister.persist_continuously()
         )
 
     def _clean_up(self):
