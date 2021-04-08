@@ -24,7 +24,7 @@ postgres:
         )
 
         # When
-        schedule: Schedule = get_schedule(Config(Profiles(config_dir=tmpdir)))
+        schedule: Schedule = get_schedule(Config(Profiles(profile_dir=tmpdir)))
 
         # Then
         assert schedule.delay == 10

@@ -24,7 +24,7 @@ postgres:
         )
 
         # When
-        startup: Startup = get_startup(Config(Profiles(config_dir=tmpdir)))
+        startup: Startup = get_startup(Config(Profiles(profile_dir=tmpdir)))
 
         # Then
         assert startup.init_schema is True
